@@ -5,7 +5,7 @@ import { COVER_IDS, PAIR_IDS, PHOTOS, photoById } from "@/lib/photos";
 import { MatrixRain } from "@/components/matrix-rain";
 
 const TARGET = new Date("2026-10-19T00:00:00-05:00").getTime();
-const INTRO = ["3", "2", "1", "HAPPY", "ANITAAA"];
+const INTRO = ["3", "2", "1", "Feliz cumpleaños", "Anitaaa"];
 const SCENES = ["intro", "cat", "gate", "cover", "letter", "pair", "memories", "heart", "close"] as const;
 const KEY_NAME = "anita-edit-key";
 
@@ -159,6 +159,10 @@ export function Experience() {
       headers: { "Content-Type": "application/json", "x-edit-key": key },
       body: JSON.stringify({ letter: draft }),
     });
+    if (response.status === 401) {
+      setNotice("La clave no coincide. Vuelve a entrar y guarda otra vez.");
+      return;
+    }
     if (!response.ok) {
       setNotice("No se guardó la carta.");
       return;
@@ -237,7 +241,11 @@ export function Experience() {
 
       {scene === "intro" && (
         <section className="scene">
-          <p className="intro-word">{INTRO[Math.min(introStep, INTRO.length - 1)]}</p>
+          <p
+            className={`intro-word${(INTRO[Math.min(introStep, INTRO.length - 1)] ?? "").length > 8 ? " long" : ""}`}
+          >
+            {INTRO[Math.min(introStep, INTRO.length - 1)]}
+          </p>
           <button className="ghost" type="button" onClick={() => go("cat")}>
             Saltar
           </button>
@@ -247,7 +255,7 @@ export function Experience() {
       {scene === "cat" && (
         <section className="scene">
           <p className="candles">FELIZ CUMPLEAÑOS</p>
-          <Cat />
+          <img className="portrait" src="/photos/anita.jpg" alt="Anitaaa" />
           <button className="pill" type="button" onClick={forward}>
             Seguir
           </button>
@@ -570,31 +578,5 @@ function FloatingHearts() {
         <i key={index} style={{ left: dot.left, top: dot.top, animationDelay: dot.delay }} />
       ))}
     </div>
-  );
-}
-
-function Cat() {
-  return (
-    <svg className="cat" viewBox="0 0 240 220" role="img" aria-label="Un gato con velas">
-      <ellipse cx="120" cy="198" rx="54" ry="10" fill="rgba(0,0,0,0.25)" />
-      <path d="M78 150c-28 8-40-30-22-48 8 18 22 22 34 16" fill="#f4f1ea" />
-      <path d="M168 148c26 10 36-28 16-46-6 16-18 22-30 16" fill="#f7f4ee" />
-      <path d="M70 118c0-48 22-78 50-78s50 30 50 78c0 40-20 70-50 70s-50-30-50-70z" fill="#fffaf4" />
-      <path d="M86 62l-16-34 28 16z" fill="#fffaf4" />
-      <path d="M154 62l16-34-28 16z" fill="#fffaf4" />
-      <path d="M84 48l-8-18 16 8z" fill="#ffd2e4" />
-      <path d="M156 48l8-18-16 8z" fill="#ffd2e4" />
-      <circle cx="100" cy="112" r="5" fill="#2a1c24" />
-      <circle cx="140" cy="112" r="5" fill="#2a1c24" />
-      <path d="M114 126h12l-6 8z" fill="#ffb7cf" />
-      <path d="M96 132c8 10 40 10 48 0" fill="none" stroke="#2a1c24" strokeWidth="3" strokeLinecap="round" />
-      <path d="M92 78c8-16 48-16 56 0" fill="none" stroke="#ffd56a" strokeWidth="4" />
-      <rect x="112" y="36" width="4" height="28" rx="2" fill="#ffe08a" />
-      <rect x="124" y="28" width="4" height="34" rx="2" fill="#ffd0ea" />
-      <rect x="136" y="38" width="4" height="24" rx="2" fill="#b7ecff" />
-      <circle cx="114" cy="34" r="4" fill="#ffb703" />
-      <circle cx="126" cy="26" r="4" fill="#ff6fa8" />
-      <circle cx="138" cy="36" r="4" fill="#7ad7ff" />
-    </svg>
   );
 }

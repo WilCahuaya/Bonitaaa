@@ -7,6 +7,7 @@
     "start": "next start -H 0.0.0.0 -p 3000"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.4",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

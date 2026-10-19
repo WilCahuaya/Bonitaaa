@@ -23,6 +23,11 @@ export async function POST(request: Request) {
   }
 
   const letter = body.letter.slice(0, 5000);
-  await writeLetter(letter);
+  try {
+    await writeLetter(letter);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, letter });
 }

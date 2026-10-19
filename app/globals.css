@@ -135,6 +135,13 @@ h2 { font-size: clamp(40px, 8vw, 72px); line-height: 0.95; }
   margin: 0;
 }
 
+.intro-word.long {
+  font-size: clamp(30px, 8vw, 72px);
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 .clock {
   width: min(560px, 100%);
   display: grid;
@@ -324,9 +331,14 @@ textarea {
   box-shadow: 0 0 16px rgba(255, 90, 160, 0.75);
 }
 
-.cat {
-  width: min(280px, 70vw);
-  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35));
+.portrait {
+  width: min(320px, 78vw);
+  height: min(460px, 58vh);
+  object-fit: cover;
+  object-position: center 18%;
+  border-radius: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
 .candles {

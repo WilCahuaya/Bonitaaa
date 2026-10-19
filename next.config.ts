@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   devIndicators: false,
+  outputFileTracingIncludes: {
+    "/api/content": ["./data/letter.txt"],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb",
