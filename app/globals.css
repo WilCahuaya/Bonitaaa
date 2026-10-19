@@ -80,6 +80,12 @@ img { max-width: 100%; display: block; }
   height: 100%;
 }
 
+.gate {
+  width: min(360px, 100%);
+  display: grid;
+  gap: 14px;
+}
+
 .scene {
   position: relative;
   z-index: 1;

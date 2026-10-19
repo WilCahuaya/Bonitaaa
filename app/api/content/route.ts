@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { passwordOk } from "@/lib/auth";
+import { passwordOk, requestCanView } from "@/lib/auth";
 import { listAudioIds, readLetter, writeLetter } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!requestCanView(request)) {
+    return NextResponse.json({ letter: "", audios: [] }, { status: 401 });
+  }
+
   const [letter, audios] = await Promise.all([readLetter(), listAudioIds()]);
   return NextResponse.json(
     { letter, audios },

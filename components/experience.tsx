@@ -10,6 +10,17 @@ const TARGET = new Date("2026-10-19T00:00:00-05:00").getTime();
 const INTRO = ["3", "2", "1", "Feliz cumpleaños", "Anitaaa"];
 const SCENES = ["intro", "cat", "gate", "cover", "letter", "pair", "memories", "heart", "close"] as const;
 const KEY_NAME = "anita-edit-key";
+const TAB_KEY = "anita-view-open";
+
+function isIphone() {
+  const agent = navigator.userAgent;
+  return /iPhone|iPad|iPod/i.test(agent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function endVisit() {
+  const sent = navigator.sendBeacon?.("/api/gate?exit=1") ?? false;
+  if (!sent) void fetch("/api/gate?exit=1", { method: "POST", keepalive: true });
+}
 
 type Scene = (typeof SCENES)[number];
 type Content = { letter: string; audios: string[] };
@@ -71,6 +82,8 @@ export function Experience() {
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [unlocked, setUnlocked] = useState<boolean | null>(null);
+  const [gatePassword, setGatePassword] = useState("");
   const [recording, setRecording] = useState(false);
   const [audioStamp, setAudioStamp] = useState(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -80,6 +93,47 @@ export function Experience() {
   const canOpen = Boolean(clock?.done || editing);
 
   useEffect(() => {
+    if (isIphone() && window.sessionStorage.getItem(TAB_KEY) !== "1") {
+      endVisit();
+      setUnlocked(false);
+      return;
+    }
+    void fetch("/api/gate")
+      .then((response) => response.json())
+      .then((data: { ok?: boolean }) => setUnlocked(Boolean(data.ok)))
+      .catch(() => setUnlocked(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isIphone()) return;
+    const leave = () => {
+      if (window.sessionStorage.getItem(TAB_KEY) !== "1") return;
+      window.sessionStorage.setItem(TAB_KEY, "0");
+      endVisit();
+    };
+    const back = () => {
+      if (window.sessionStorage.getItem(TAB_KEY) === "1") return;
+      setScene("intro");
+      setIntroStep(0);
+      setOpenId(null);
+      setUnlocked(false);
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") leave();
+      else back();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", leave);
+    window.addEventListener("pageshow", back);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", back);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!unlocked) return;
     const saved = window.sessionStorage.getItem(KEY_NAME) ?? "";
     if (saved) setKey(saved);
     void fetch("/api/content")
@@ -89,10 +143,10 @@ export function Experience() {
         setDraft(data.letter ?? "");
       })
       .catch(() => setNotice("No pude cargar la carta."));
-  }, []);
+  }, [unlocked]);
 
   useEffect(() => {
-    if (scene !== "intro") return;
+    if (!unlocked || scene !== "intro") return;
     if (introStep >= INTRO.length) {
       const timer = window.setTimeout(() => setScene("cat"), 500);
       return () => window.clearTimeout(timer);
@@ -100,7 +154,7 @@ export function Experience() {
     const delay = introStep >= 3 ? 1200 : 850;
     const timer = window.setTimeout(() => setIntroStep((step) => step + 1), delay);
     return () => window.clearTimeout(timer);
-  }, [scene, introStep]);
+  }, [scene, introStep, unlocked]);
 
   useEffect(() => {
     return () => {
@@ -136,6 +190,23 @@ export function Experience() {
     const index = SCENES.indexOf(scene);
     const previous = SCENES[index - 1];
     if (previous) go(previous);
+  }
+
+  async function enter(event: React.FormEvent) {
+    event.preventDefault();
+    const response = await fetch("/api/gate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: gatePassword }),
+    });
+    if (!response.ok) {
+      setNotice("Esa contraseña no abre.");
+      return;
+    }
+    setGatePassword("");
+    setNotice("");
+    if (isIphone()) window.sessionStorage.setItem(TAB_KEY, "1");
+    setUnlocked(true);
   }
 
   async function unlock(event: React.FormEvent) {
@@ -243,6 +314,36 @@ export function Experience() {
   const openPhoto = openId ? photoById(openId) : undefined;
   const hasAudio = openId ? content.audios.includes(openId) : false;
   const hasGreeting = content.audios.includes(GREETING_ID);
+
+  if (!unlocked) {
+    return (
+      <main className="sky">
+        <Stars />
+        {unlocked === false && (
+          <section className="scene">
+            <form className="gate" onSubmit={(event) => void enter(event)}>
+              <p className="eyebrow">Privado</p>
+              <h2>Para ver esto</h2>
+              <p className="whisper">Escribe la contraseña.</p>
+              <input
+                type="password"
+                value={gatePassword}
+                autoFocus
+                autoComplete="current-password"
+                onChange={(event) => setGatePassword(event.target.value)}
+              />
+              <button className="pill" type="submit">
+                Entrar
+              </button>
+              <p className="note" aria-live="polite">
+                {notice}
+              </p>
+            </form>
+          </section>
+        )}
+      </main>
+    );
+  }
 
   return (
     <main className="sky" data-scene={scene}>

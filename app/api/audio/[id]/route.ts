@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { mediaResponse, sniffAudioType } from "@/lib/audio-response";
-import { passwordOk } from "@/lib/auth";
+import { passwordOk, requestCanView } from "@/lib/auth";
 import { isAudioId, readAudio, saveAudio } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, context: Context) {
+  if (!requestCanView(request)) return new NextResponse(null, { status: 401 });
+
   const { id } = await context.params;
   if (!isAudioId(id)) return new NextResponse(null, { status: 404 });
 
