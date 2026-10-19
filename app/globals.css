@@ -331,6 +331,11 @@ textarea {
   box-shadow: 0 0 16px rgba(255, 90, 160, 0.75);
 }
 
+.greeting-audio {
+  width: min(320px, 78vw);
+  height: 40px;
+}
+
 .portrait {
   width: min(320px, 78vw);
   height: min(460px, 58vh);

@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { getStore } from "@netlify/blobs";
+import { GREETING_ID } from "@/lib/greeting";
 
 const dataDir = path.join(process.cwd(), "data");
 const audioDir = path.join(dataDir, "audios");
@@ -19,6 +20,8 @@ const MIME_EXT: Record<string, (typeof AUDIO_EXTS)[number]> = {
   "audio/wav": "wav",
   "audio/x-wav": "wav",
   "video/webm": "webm",
+  "video/mp4": "m4a",
+  "audio/x-m4a": "m4a",
 };
 
 function onNetlify() {
@@ -36,6 +39,10 @@ function store() {
 
 export function isPhotoId(id: string) {
   return /^(0[1-9]|1\d|2[0-4])$/.test(id);
+}
+
+export function isAudioId(id: string) {
+  return id === GREETING_ID || isPhotoId(id);
 }
 
 async function readLetterFile() {
@@ -74,7 +81,7 @@ export async function listAudioIds() {
       const files = await readdir(audioDir);
       return files
         .map((file) => {
-          const match = file.match(/^(0[1-9]|1\d|2[0-4])\.(webm|mp3|m4a|mp4|ogg|wav|aac)$/i);
+          const match = file.match(/^(saludo|0[1-9]|1\d|2[0-4])\.(webm|mp3|m4a|mp4|ogg|wav|aac)$/i);
           return match ? match[1] : null;
         })
         .filter((id): id is string => Boolean(id));
@@ -86,7 +93,7 @@ export async function listAudioIds() {
   const { blobs } = await store().list({ prefix: "audio/" });
   return blobs
     .map((blob) => blob.key.slice("audio/".length))
-    .filter((id) => isPhotoId(id));
+    .filter((id) => isAudioId(id));
 }
 
 export async function readAudio(id: string) {

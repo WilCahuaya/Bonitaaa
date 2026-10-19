@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { COVER_IDS, PAIR_IDS, PHOTOS, photoById } from "@/lib/photos";
+import { GREETING_ID } from "@/lib/greeting";
+import { toWavBlob } from "@/lib/wav";
 import { MatrixRain } from "@/components/matrix-rain";
 
 const TARGET = new Date("2026-10-19T00:00:00-05:00").getTime();
@@ -116,6 +118,7 @@ export function Experience() {
   );
 
   function go(next: Scene) {
+    if (recording) stopRecording();
     setNotice("");
     setScene(next);
     if (next === "intro") setIntroStep(0);
@@ -172,8 +175,14 @@ export function Experience() {
   }
 
   async function uploadAudio(id: string, file: Blob) {
+    let payload = file;
+    try {
+      payload = await toWavBlob(file);
+    } catch {
+      payload = file;
+    }
     const body = new FormData();
-    body.append("file", file, "audio");
+    body.append("file", payload, payload.type === "audio/wav" ? "audio.wav" : "audio");
     const response = await fetch(`/api/audio/${id}`, {
       method: "POST",
       headers: { "x-edit-key": key },
@@ -198,7 +207,7 @@ export function Experience() {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) =>
+      const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find((type) =>
         MediaRecorder.isTypeSupported(type),
       );
       const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
@@ -233,6 +242,7 @@ export function Experience() {
 
   const openPhoto = openId ? photoById(openId) : undefined;
   const hasAudio = openId ? content.audios.includes(openId) : false;
+  const hasGreeting = content.audios.includes(GREETING_ID);
 
   return (
     <main className="sky" data-scene={scene}>
@@ -256,6 +266,35 @@ export function Experience() {
         <section className="scene">
           <p className="candles">FELIZ CUMPLEAÑOS</p>
           <img className="portrait" src="/photos/anita.jpg" alt="Anitaaa" />
+          {hasGreeting && (
+            <audio className="greeting-audio" controls src={`/api/audio/${GREETING_ID}?v=${audioStamp}`} />
+          )}
+          {editing && (
+            <div className="row">
+              {recording ? (
+                <button className="pill" type="button" onClick={stopRecording}>
+                  Detener y guardar
+                </button>
+              ) : (
+                <button className="pill" type="button" onClick={() => void startRecording(GREETING_ID)}>
+                  Grabar saludo
+                </button>
+              )}
+              <label className="tiny">
+                Subir audio
+                <input
+                  type="file"
+                  accept="audio/*"
+                  hidden
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void uploadAudio(GREETING_ID, file);
+                  }}
+                />
+              </label>
+            </div>
+          )}
           <button className="pill" type="button" onClick={forward}>
             Seguir
           </button>
@@ -505,7 +544,12 @@ export function Experience() {
           <div className="lightbox-card">
             <img src={openPhoto.src} alt="Recuerdo" />
             {hasAudio && (
-              <audio key={`${openPhoto.id}-${audioStamp}`} controls src={`/api/audio/${openPhoto.id}`} />
+              <audio
+                key={`${openPhoto.id}-${audioStamp}`}
+                controls
+                preload="auto"
+                src={`/api/audio/${openPhoto.id}?v=${audioStamp}`}
+              />
             )}
             {editing && (
               <div className="row">
