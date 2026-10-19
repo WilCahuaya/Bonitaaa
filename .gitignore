@@ -1,0 +1,6 @@
+node_modules
+.next
+data/audios
+data/letter.txt
+.env.local
+.verify
